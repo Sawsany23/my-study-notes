@@ -1,0 +1,9 @@
+# ملفات النظام والمحرر
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log
+
+# أسرار
+token.txt
+*.env
