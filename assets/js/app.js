@@ -350,7 +350,7 @@
       form.reset();
       await enterApp(user, true);
     } catch (err) {
-      showAuthError('auth.errCredentials');
+      showAuthError(err && err.message ? err.message : 'auth.errCredentials');
     } finally {
       if (submit) submit.disabled = false;
     }
@@ -385,7 +385,7 @@
       await enterApp(user, 'created');
     } catch (err) {
       if (err && /already|registered|exists/i.test(err.message || '')) showAuthError('auth.errUserExists');
-      else showAuthError('auth.errGeneric');
+      else showAuthError(err && err.message ? err.message : 'auth.errGeneric');
     } finally {
       if (submit) submit.disabled = false;
     }
@@ -1015,7 +1015,7 @@
       closeModal('#pin-modal');
       toast(t('pin.done'), 'success');
     } catch (err) {
-      fail('auth.errGeneric');
+      fail(err && err.message ? err.message : 'auth.errGeneric');
     } finally {
       if (submit) submit.disabled = false;
     }
