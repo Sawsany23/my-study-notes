@@ -132,6 +132,9 @@
             </button>
           </div>
         </div>
+        <div class="auth-row">
+          <button type="button" class="link-btn" data-action="forgot-password" data-i18n="auth.forgotPassword">نسيت كلمة المرور؟</button>
+        </div>
         <button class="btn btn-primary btn-block" type="submit">
           <span data-i18n="auth.loginBtn">دخول إلى مذكراتي</span>
           <svg class="btn-arrow"><use href="#i-check"></use></svg>
@@ -673,6 +676,74 @@
       <footer class="modal-foot">
         <button type="button" class="btn btn-ghost" data-close-modal data-i18n="common.cancel">إلغاء</button>
         <button type="submit" class="btn btn-primary" data-i18n="pin.save">تحديث الرقم السري</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- إعادة تعيين كلمة المرور: طلب رابط -->
+<div class="modal" id="reset-request-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-card modal-narrow" role="dialog" aria-modal="true" aria-labelledby="reset-request-title">
+    <header class="modal-head">
+      <div>
+        <span class="eyebrow" data-i18n="settings.security">الأمان والحساب</span>
+        <h2 id="reset-request-title">إعادة تعيين كلمة المرور</h2>
+      </div>
+      <button type="button" class="icon-btn" data-close-modal data-i18n-aria="common.close" data-i18n-title="common.close">
+        <svg><use href="#i-close"></use></svg>
+      </button>
+    </header>
+    <form id="reset-request-form" novalidate>
+      <label class="field">
+        <span class="field-label" data-i18n="auth.email">البريد الإلكتروني</span>
+        <input class="input" name="email" type="email" dir="ltr" autocomplete="email" maxlength="80" data-i18n-ph="auth.emailPh" required>
+      </label>
+      <p class="form-error" id="reset-request-error" hidden></p>
+      <footer class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close-modal data-i18n="common.cancel">إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-i18n="auth.registerBtn">إرسال الرابط</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- إعادة تعيين كلمة المرور: كلمة مرور جديدة -->
+<div class="modal" id="reset-password-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-card modal-narrow" role="dialog" aria-modal="true" aria-labelledby="reset-password-title">
+    <header class="modal-head">
+      <div>
+        <span class="eyebrow" data-i18n="settings.security">الأمان والحساب</span>
+        <h2 id="reset-password-title">تعيين كلمة مرور جديدة</h2>
+      </div>
+      <button type="button" class="icon-btn" data-close-modal data-i18n-aria="common.close" data-i18n-title="common.close">
+        <svg><use href="#i-close"></use></svg>
+      </button>
+    </header>
+    <form id="reset-password-form" novalidate>
+      <div class="field">
+        <label class="field-label" for="reset-new-password" data-i18n="auth.password">كلمة المرور</label>
+        <div class="input-group">
+          <input class="input" id="reset-new-password" name="password" type="password" autocomplete="new-password" minlength="8" data-i18n-ph="auth.passwordPh" required>
+          <button type="button" class="input-action" data-action="toggle-pin" data-i18n-aria="auth.showPin" data-i18n-title="auth.showPin">
+            <svg><use href="#i-eye"></use></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="reset-confirm-password" data-i18n="auth.confirmPassword">تأكيد كلمة المرور</label>
+        <div class="input-group">
+          <input class="input" id="reset-confirm-password" name="confirm" type="password" autocomplete="new-password" minlength="8" data-i18n-ph="auth.confirmPinPh" required>
+          <button type="button" class="input-action" data-action="toggle-pin" data-i18n-aria="auth.showPin" data-i18n-title="auth.showPin">
+            <svg><use href="#i-eye"></use></svg>
+          </button>
+        </div>
+      </div>
+      <p class="form-error" id="reset-password-error" hidden></p>
+      <footer class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close-modal data-i18n="common.cancel">إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-i18n="pin.save">تحديث</button>
       </footer>
     </form>
   </div>

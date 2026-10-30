@@ -390,6 +390,68 @@
       if (submit) submit.disabled = false;
     }
   }
+  async function handleResetRequest(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const error = $('#reset-request-error');
+    if (error) { error.hidden = true; error.textContent = ''; }
+    const email = (form.elements.email && form.elements.email.value || '').trim();
+    if (!email) return showResetError('auth.errFields');
+    if (!Store.isValidEmail(email)) return showResetError('auth.errEmailFormat');
+
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.disabled = true;
+    try {
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error: err } = await Store.supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+      if (err) throw err;
+      form.reset();
+      closeModal('#reset-request-modal');
+      toast('?? ????? ???? ????? ??????? ??? ?????.', 'success');
+    } catch (err) {
+      showResetError(err && err.message ? err.message : 'auth.errGeneric');
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  }
+
+  function showResetError(key) {
+    const error = $('#reset-request-error');
+    if (error) { error.textContent = t(key, {}) || key; error.hidden = false; }
+  }
+
+  async function handleResetPassword(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const error = $('#reset-password-error');
+    if (error) { error.hidden = true; error.textContent = ''; }
+    const password = (form.elements.password && form.elements.password.value || '').trim();
+    const confirm = (form.elements.confirm && form.elements.confirm.value || '').trim();
+    if (!password || !confirm) return showResetPassError('auth.errFields');
+    if (password.length < 8) return showResetPassError('auth.errPasswordFormat');
+    if (password !== confirm) return showResetPassError('auth.errPasswordMatch');
+
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.disabled = true;
+    try {
+      const { error: err } = await Store.supabase.auth.updateUser({ password: password });
+      if (err) throw err;
+      form.reset();
+      closeModal('#reset-password-modal');
+      toast(t('pin.done'), 'success');
+      const user = await Store.getUser();
+      if (user) await enterApp(user, false);
+    } catch (err) {
+      showResetPassError(err && err.message ? err.message : 'auth.errGeneric');
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  }
+
+  function showResetPassError(msg) {
+    const error = $('#reset-password-error');
+    if (error) { error.textContent = msg; error.hidden = false; }
+  }
   async function enterApp(user, announce) {
     state.user = user;
     state.notes = [];
@@ -1104,6 +1166,9 @@
       case 'toggle-theme':
         applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
         break;
+      case 'forgot-password':
+        openModal('#reset-request-modal', $('#reset-request-form') && $('#reset-request-form').elements.email);
+        break;
       case 'toggle-sidebar':
         if ($('#sidebar') && $('#sidebar').classList.contains('is-open')) closeSidebar();
         else openSidebar();
@@ -1273,6 +1338,11 @@
     const noteForm = $('#note-form');
     if (noteForm) noteForm.addEventListener('submit', handleNoteSubmit);
 
+    const resetRequestForm = $('#reset-request-form');
+    if (resetRequestForm) resetRequestForm.addEventListener('submit', handleResetRequest);
+    const resetPasswordForm = $('#reset-password-form');
+    if (resetPasswordForm) resetPasswordForm.addEventListener('submit', handleResetPassword);
+
     const pinForm = $('#pin-form');
     if (pinForm) pinForm.addEventListener('submit', handlePinSubmit);
 
@@ -1342,6 +1412,10 @@
     if (!Store.storageAvailable()) toast(t('toast.storageError'), 'error');
 
     Store.onAuthStateChange(async function (event, session) {
+      if (event === 'PASSWORD_RECOVERY') {
+        openModal('#reset-password-modal', $('#reset-password-form') && $('#reset-password-form').elements.password);
+        return;
+      }
       if (event === 'SIGNED_OUT') {
         resetToAuth();
       } else if (event === 'SIGNED_IN' && session) {
