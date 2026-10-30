@@ -643,6 +643,32 @@ body.no-scroll { overflow: hidden; }
   box-shadow: var(--shadow-sm);
 }
 
+.auth-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-2);
+}
+.auth-mode-tabs .auth-mode-btn {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 600;
+  transition: background-color .18s, color .18s, box-shadow .18s;
+}
+.auth-mode-tabs .auth-mode-btn:hover { color: var(--ink); }
+.auth-mode-tabs .auth-mode-btn.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
 .auth-form { display: flex; flex-direction: column; gap: 15px; }
 
 .auth-note {

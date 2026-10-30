@@ -334,63 +334,69 @@
     const form = event.currentTarget;
     const error = form.querySelector('[data-auth-error]');
     if (error) { error.hidden = true; error.textContent = ''; }
-    const username = form.elements.username.value.trim();
-    const pin = form.elements.pin.value.trim();
+    const email = (form.elements.email && form.elements.email.value || '').trim();
+    const password = (form.elements.password && form.elements.password.value || '').trim();
 
-    if (!username || !pin) return showAuthError('auth.errFields');
-    if (!/^\d{4,8}$/.test(pin)) return showAuthError('auth.errPinFormat');
+    if (!email || !password) return showAuthError('auth.errFields');
+    if (!Store.isValidEmail(email)) return showAuthError('auth.errEmailFormat');
+    if (password.length < 8) return showAuthError('auth.errPasswordFormat');
 
     const submit = form.querySelector('button[type="submit"]');
     if (submit) submit.disabled = true;
     try {
-      const user = Store.findUserByName(username);
-      if (!user) return showAuthError('auth.errUser');
-      const valid = await Store.verifyPin(pin, user.hash);
-      if (!valid) return showAuthError('auth.errPin');
+      await Store.signIn(email, password);
+      const user = await Store.getUser();
+      if (!user) throw new Error('NO_USER');
       form.reset();
-      enterApp(user, true);
+      await enterApp(user, true);
     } catch (err) {
-      showAuthError('auth.errGeneric');
+      showAuthError('auth.errCredentials');
     } finally {
       if (submit) submit.disabled = false;
     }
   }
-
   async function handleRegister(event) {
     event.preventDefault();
     const form = event.currentTarget;
     const error = form.querySelector('[data-auth-error]');
     if (error) { error.hidden = true; error.textContent = ''; }
-    const username = form.elements.username.value.trim().replace(/\s+/g, ' ');
-    const pin = form.elements.pin.value.trim();
-    const confirm = form.elements.confirm.value.trim();
+    const name = (form.elements.displayName && form.elements.displayName.value || '').trim().replace(/\s+/g, ' ');
+    const email = (form.elements.email && form.elements.email.value || '').trim();
+    const password = (form.elements.password && form.elements.password.value || '').trim();
+    const confirm = (form.elements.confirm && form.elements.confirm.value || '').trim();
 
-    if (!username || !pin || !confirm) return showAuthError('auth.errFields');
-    if (username.length < 3) return showAuthError('auth.errShortUser');
-    if (!/^[\p{L}\p{N}][\p{L}\p{N} ._-]{2,23}$/u.test(username)) return showAuthError('auth.errUsernameChars');
-    if (!/^\d{4,8}$/.test(pin)) return showAuthError('auth.errPinFormat');
-    if (pin !== confirm) return showAuthError('auth.errPinMatch');
-    if (Store.findUserByName(username)) return showAuthError('auth.errUserExists');
+    if (!name || !email || !password || !confirm) return showAuthError('auth.errFields');
+    if (name.length < 3) return showAuthError('auth.errShortUser');
+    if (!/^[\p{L}\p{N}][\p{L}\p{N} ._-]{2,23}$/u.test(name)) return showAuthError('auth.errUsernameChars');
+    if (!Store.isValidEmail(email)) return showAuthError('auth.errEmailFormat');
+    if (password.length < 8) return showAuthError('auth.errPasswordFormat');
+    if (password !== confirm) return showAuthError('auth.errPasswordMatch');
 
     const submit = form.querySelector('button[type="submit"]');
     if (submit) submit.disabled = true;
     try {
-      const user = await Store.createUser(username, pin);
+      await Store.signUp(name, email, password);
+      const user = await Store.getUser();
+      if (!user) {
+        showAuthError('auth.errConfirmEmail');
+        return;
+      }
       form.reset();
-      enterApp(user, 'created');
+      await enterApp(user, 'created');
     } catch (err) {
-      if (err && err.code === 'USER_EXISTS') showAuthError('auth.errUserExists');
+      if (err && /already|registered|exists/i.test(err.message || '')) showAuthError('auth.errUserExists');
       else showAuthError('auth.errGeneric');
     } finally {
       if (submit) submit.disabled = false;
     }
   }
-
-  function enterApp(user, announce) {
+  async function enterApp(user, announce) {
     state.user = user;
-    state.notes = Store.getNotes(user.id);
+    state.notes = [];
     state.filters = { q: '', subject: '', status: '', sort: 'recent' };
-    Store.setSession(user.id);
+    try {
+      state.notes = await Store.getNotes(user.id);
+    } catch (err) { state.notes = []; storageError(); }
 
     const authScreen = $('#auth-screen');
     const app = $('#app');
@@ -398,14 +404,11 @@
     if (app) app.hidden = false;
     document.body.classList.add('is-authed');
 
-    I18n.apply();
     renderAll();
-    switchView('dashboard');
     if (announce) {
       toast(t(announce === 'created' ? 'auth.created' : 'auth.welcome', { name: user.name }), 'success');
     }
   }
-
   function resetToAuth() {
     state.user = null;
     state.notes = [];
@@ -427,13 +430,11 @@
     try { window.scrollTo(0, 0); } catch (err) { /* ignore */ }
   }
 
-  function logout(silent) {
-    Store.clearSession();
+  async function logout(silent) {
+    try { await Store.signOut(); } catch (err) { /* ignore */ }
     resetToAuth();
     if (!silent) toast(t('toast.loggedOut'), 'success');
   }
-
-  /* ---------- عرض الهيكل ---------- */
   function renderChrome() {
     if (!state.user) return;
     const user = state.user;
@@ -806,7 +807,7 @@
     openModal('#note-modal', form.elements.subject);
   }
 
-  function handleNoteSubmit(event) {
+  async function handleNoteSubmit(event) {
     event.preventDefault();
     if (!state.user) return;
     const form = event.currentTarget;
@@ -829,26 +830,18 @@
     }
 
     const now = Date.now();
-    let next;
     try {
       if (state.editingId) {
-        next = state.notes.map((note) => note.id === state.editingId
-          ? { ...note, subject: subject, lesson: lesson, summary: summary, examDate: examDate, status: status, updatedAt: now }
-          : note);
+        const updated = await Store.updateNote(state.user.id, state.editingId, {
+          subject: subject, lesson: lesson, summary: summary, examDate: examDate, status: status, updatedAt: now
+        });
+        state.notes = state.notes.map((note) => note.id === state.editingId ? updated : note);
       } else {
-        next = [{
-          id: Store.uid(),
-          subject: subject,
-          lesson: lesson,
-          summary: summary,
-          examDate: examDate,
-          status: status,
-          createdAt: now,
-          updatedAt: now
-        }].concat(state.notes);
+        const created = await Store.createNote(state.user.id, {
+          subject: subject, lesson: lesson, summary: summary, examDate: examDate, status: status, createdAt: now, updatedAt: now
+        });
+        state.notes = [created].concat(state.notes);
       }
-      Store.setNotes(state.user.id, next);
-      state.notes = next;
       const wasEditing = Boolean(state.editingId);
       state.editingId = null;
       closeModal('#note-modal');
@@ -936,12 +929,13 @@
       title: t('confirm.deleteNoteTitle'),
       text: t('confirm.deleteNoteText', { lesson: note.lesson }),
       okLabel: t('confirm.ok'),
-      onConfirm: function () {
-        const next = state.notes.filter((item) => item.id !== id);
-        Store.setNotes(state.user.id, next);
-        state.notes = next;
-        renderAll();
-        toast(t('notes.deleted'), 'success');
+      onConfirm: async function () {
+        try {
+          await Store.deleteNote(state.user.id, id);
+          state.notes = state.notes.filter((item) => item.id !== id);
+          renderAll();
+          toast(t('notes.deleted'), 'success');
+        } catch (err) { storageError(); }
       }
     });
   }
@@ -951,11 +945,13 @@
       title: t('confirm.deleteAllTitle'),
       text: t('confirm.deleteAllText', { n: state.notes.length }),
       okLabel: t('confirm.ok'),
-      onConfirm: function () {
-        Store.setNotes(state.user.id, []);
-        state.notes = [];
-        renderAll();
-        toast(t('toast.deletedAll'), 'success');
+      onConfirm: async function () {
+        try {
+          await Store.deleteAllNotes(state.user.id);
+          state.notes = [];
+          renderAll();
+          toast(t('toast.deletedAll'), 'success');
+        } catch (err) { storageError(); }
       }
     });
   }
@@ -1004,17 +1000,17 @@
     if (error) error.hidden = true;
 
     if (!current || !pin || !confirm) return fail('auth.errFields');
-    if (!/^\d{4,8}$/.test(pin)) return fail('pin.errFormat');
+    if (pin.length < 8) return fail('pin.errFormat');
     if (pin !== confirm) return fail('pin.errMatch');
     if (pin === current) return fail('pin.errSame');
 
     const submit = form.querySelector('button[type="submit"]');
     if (submit) submit.disabled = true;
     try {
-      const valid = await Store.verifyPin(current, state.user.hash);
-      if (!valid) return fail('pin.errCurrent');
-      const updated = await Store.updatePin(state.user.id, pin);
-      state.user = { ...state.user, ...updated };
+      const { error: signInError } = await Store.supabase.auth.signInWithPassword({ email: state.user.email, password: current });
+      if (signInError) return fail('pin.errCurrent');
+      const { error } = await Store.supabase.auth.updateUser({ password: pin });
+      if (error) throw error;
       form.reset();
       closeModal('#pin-modal');
       toast(t('pin.done'), 'success');
@@ -1085,8 +1081,13 @@
         map.set(note.id, existing ? { ...existing, ...note, updatedAt: Date.now() } : note);
       });
       const next = Array.from(map.values());
-      Store.setNotes(state.user.id, next);
-      state.notes = next;
+      try {
+        await Store.deleteAllNotes(state.user.id);
+        const created = await Store.createNotes(state.user.id, next);
+        state.notes = created.length ? created : next;
+      } catch (err) {
+        state.notes = next;
+      }
       renderAll();
       toast(t('settings.imported', { n: clean.length }), 'success');
     } catch (err) {
@@ -1313,20 +1314,7 @@
     const importFile = $('#import-file');
     if (importFile) importFile.addEventListener('change', handleImportFile);
 
-    window.addEventListener('storage', (event) => {
-      if (!state.user) return;
-      if (event.key === 'msn.v1.notes.' + state.user.id) {
-        state.notes = Store.getNotes(state.user.id);
-        renderAll();
-      } else if (event.key === 'msn.v1.users') {
-        const fresh = Store.findUserById(state.user.id);
-        if (!fresh) logout(true);
-        else {
-          state.user = fresh;
-          renderChrome();
-        }
-      }
-    });
+    /* Supabase handles multi-tab sync via auth state changes; no localStorage sync needed. */
 
     window.addEventListener('resize', () => {
       if (window.innerWidth > 960) closeSidebar();
@@ -1335,7 +1323,7 @@
   }
 
   /* ---------- البداية ---------- */
-  function init() {
+  async function init() {
     const prefs = Store.getPrefs();
     I18n.init(prefs.lang === 'en' ? 'en' : 'ar');
     applyTheme(prefs.theme === 'dark' ? 'dark' : 'light', false);
@@ -1343,14 +1331,24 @@
     syncSidebarA11y();
     syncAuthTab('login');
 
-    const session = Store.getSession();
-    if (session) {
-      const user = Store.findUserById(session.userId);
-      if (user) enterApp(user, false);
-      else Store.clearSession();
-    }
+    try {
+      const session = await Store.getSession();
+      if (session) {
+        const user = await Store.getUser();
+        if (user) await enterApp(user, false);
+      }
+    } catch (err) { /* ignore */ }
 
     if (!Store.storageAvailable()) toast(t('toast.storageError'), 'error');
+
+    Store.onAuthStateChange(async function (event, session) {
+      if (event === 'SIGNED_OUT') {
+        resetToAuth();
+      } else if (event === 'SIGNED_IN' && session) {
+        const user = await Store.getUser();
+        if (user && !document.body.classList.contains('is-authed')) await enterApp(user, false);
+      }
+    });
   }
 
   if (document.readyState === 'loading') {

@@ -120,13 +120,13 @@
 
       <form id="login-form" class="auth-form" role="tabpanel" aria-labelledby="tab-login" novalidate>
         <label class="field">
-          <span class="field-label" data-i18n="auth.username">اسم المستخدم</span>
-          <input class="input" name="username" type="text" dir="auto" autocomplete="username" maxlength="24" data-i18n-ph="auth.usernamePh" required>
+          <span class="field-label" data-i18n="auth.email">البريد الإلكتروني</span>
+          <input class="input" name="email" type="email" dir="ltr" autocomplete="email" maxlength="80" data-i18n-ph="auth.emailPh" required>
         </label>
         <div class="field">
-          <label class="field-label" for="login-pin" data-i18n="auth.pin">الرقم السري</label>
+          <label class="field-label" for="login-password" data-i18n="auth.password">كلمة المرور</label>
           <div class="input-group">
-            <input class="input" id="login-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" pattern="[0-9]{4,8}" data-i18n-ph="auth.pinPh" required>
+            <input class="input" id="login-password" name="password" type="password" autocomplete="current-password" minlength="8" data-i18n-ph="auth.passwordPh" required>
             <button type="button" class="input-action" data-action="toggle-pin" data-i18n-aria="auth.showPin" data-i18n-title="auth.showPin">
               <svg><use href="#i-eye"></use></svg>
             </button>
@@ -137,42 +137,46 @@
           <span data-i18n="auth.loginBtn">دخول إلى مذكراتي</span>
           <svg class="btn-arrow"><use href="#i-check"></use></svg>
         </button>
-        <p class="auth-note"><svg><use href="#i-lock"></use></svg><span data-i18n="auth.loginNote">رقمك السري لا يُخزَّن كنص صريح، ويُشتق منه بصمة مشفّرة في متصفحك.</span></p>
+        <p class="auth-note"><svg><use href="#i-lock"></use></svg><span data-i18n="auth.loginNote">مذكراتك محفوظة في قاعدة بيانات Supabase ومحمية بحسابك.</span></p>
       </form>
 
       <form id="register-form" class="auth-form" role="tabpanel" aria-labelledby="tab-register" hidden novalidate>
         <label class="field">
           <span class="field-label" data-i18n="auth.username">اسم المستخدم</span>
-          <input class="input" name="username" type="text" dir="auto" autocomplete="username" maxlength="24" data-i18n-ph="auth.usernamePh" required>
+          <input class="input" name="displayName" type="text" dir="auto" autocomplete="name" maxlength="24" data-i18n-ph="auth.usernamePh" required>
           <span class="field-hint" data-i18n="auth.usernameHint">من 3 إلى 24 حرفًا، وسيظهر في أعلى لوحتك.</span>
+        </label>
+        <label class="field">
+          <span class="field-label" data-i18n="auth.email">البريد الإلكتروني</span>
+          <input class="input" name="email" type="email" dir="ltr" autocomplete="email" maxlength="80" data-i18n-ph="auth.emailPh" required>
         </label>
         <div class="field-row">
           <div class="field">
-            <label class="field-label" for="register-pin" data-i18n="auth.pin">الرقم السري</label>
+            <label class="field-label" for="register-password" data-i18n="auth.password">كلمة المرور</label>
             <div class="input-group">
-              <input class="input" id="register-pin" name="pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" pattern="[0-9]{4,8}" data-i18n-ph="auth.pinPh" required>
+              <input class="input" id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" data-i18n-ph="auth.passwordPh" required>
               <button type="button" class="input-action" data-action="toggle-pin" data-i18n-aria="auth.showPin" data-i18n-title="auth.showPin">
                 <svg><use href="#i-eye"></use></svg>
               </button>
             </div>
           </div>
           <div class="field">
-            <label class="field-label" for="register-confirm" data-i18n="auth.confirmPin">تأكيد الرقم السري</label>
+            <label class="field-label" for="register-confirm-password" data-i18n="auth.confirmPassword">تأكيد كلمة المرور</label>
             <div class="input-group">
-              <input class="input" id="register-confirm" name="confirm" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" pattern="[0-9]{4,8}" data-i18n-ph="auth.confirmPinPh" required>
+              <input class="input" id="register-confirm-password" name="confirm" type="password" autocomplete="new-password" minlength="8" data-i18n-ph="auth.confirmPinPh" required>
               <button type="button" class="input-action" data-action="toggle-pin" data-i18n-aria="auth.showPin" data-i18n-title="auth.showPin">
                 <svg><use href="#i-eye"></use></svg>
               </button>
             </div>
           </div>
         </div>
-        <span class="field-hint" data-i18n="auth.pinHint">الرقم السري من 4 إلى 8 أرقام. احتفظ به، فلا يمكن استعادته.</span>
+        <span class="field-hint" data-i18n="auth.passwordHint">8 أحرف على الأقل، يُفضل مزيجًا من حروف وأرقام.</span>
         <p class="form-error" data-auth-error hidden></p>
         <button class="btn btn-primary btn-block" type="submit">
           <span data-i18n="auth.registerBtn">إنشاء حسابي</span>
           <svg class="btn-arrow"><use href="#i-plus"></use></svg>
         </button>
-        <p class="auth-note"><svg><use href="#i-lock"></use></svg><span data-i18n="auth.registerNote">مذكراتك ستبقى خاصة بهذا الحساب على هذا المتصفح.</span></p>
+        <p class="auth-note"><svg><use href="#i-lock"></use></svg><span data-i18n="auth.registerNote">مذكراتك ستبقى خاصة بهذا الحساب.</span></p>
       </form>
     </div>
 
@@ -676,6 +680,7 @@
 
 <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/i18n.js"></script>
 <script src="assets/js/store.js"></script>
 <script src="assets/js/app.js"></script>
